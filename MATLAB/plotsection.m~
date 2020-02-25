@@ -1,0 +1,12 @@
+function plotsection(BW,pix,first,len)
+
+next=first+len
+b=pix(first:next)
+[row,col] = ind2sub(size(BW),b)
+
+c = minBoundingBox([col , row]')
+
+s= [col , row]'
+
+hold on, plot(s(1,:),s(2,:),'.'); 
+hold on,   plot(c(1,[1:end 1]),c(2,[1:end 1]),'r','LineWidth',2); hold on

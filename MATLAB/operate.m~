@@ -1,0 +1,10 @@
+function plotall(list)
+cimg=imread('cimg.jpg')
+BW = im2bw(cimg)
+z=find(BW)
+
+imshow(BW)
+list=[0,list]
+for i=1:len(list)
+    plotsection(size(BW),z,sum(),40190)
+end

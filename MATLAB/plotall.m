@@ -1,0 +1,23 @@
+function plotall(list)
+cimg=imread('cimg.jpg')
+BW = im2bw(cimg)
+z=find(BW)
+
+imshow(BW)
+hold on
+
+list=[1,list]
+
+%add two cases to compensate for the last bit of pixels--- not enough or
+%too much
+if(sum(list))>length(z)
+    list(length(list))=length(z)-sum(list(1:length(list)-1))
+end
+if(sum(list))<length(z)
+    list=[list,length(z)-sum(list)]
+end
+
+for i=1:length(list)-1
+    plotsection(size(BW),z,sum(list(1:i)),sum(list(1:i+1)))  
+    hold on
+end
