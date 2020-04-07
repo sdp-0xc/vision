@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>my game</title>
+
+<style type="text/css">
+body{
+    margin:0px;
+}
+input{
+    width:50px;
+    border:solid 1px #5f5f5f;
+}
+#panel{
+    position:absolute;
+    top:50px;
+    left:30px;
+    z-index:999;
+}
+#output{
+    
+    top:100px;
+    left:300px;
+    right: 300px;
+    z-index:999;
+}
+#gameover{
+    position:absolute;
+    color:red;
+    font-family:微软雅黑;
+    font-size:140px;
+}
+</style>
+
+</head>
+<body>
+<!--x:--><input type="hidden" value="7" id="sx" /><!-- y:--><input type="hidden" value="7" id="sy" />
+<button id="init">refresh</button>
+<div id="panel"></div>
+
+<form action="/external/" method="post">
+    {% csrf_token %}
+    Input Text:
+    <input type="text" name="param" pattern="([0-9]*,)+[0-9]+" placeholder="list" required><br><br>
+    {{data_external}}<br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    <br><br>
+    {{data1}}
+    <br><br>
+    <br><br>
+    
+    <input type="submit" value="Execute External Python Script">
+
+</form>
+
+    <div id="gameover" style="top:-500px;left:-500px;">game over</div>
+
+<script type="text/javascript">
+
+//格子
+var boxX = 30;
+var boxY = 30;
+var border = "solid 1px #fcfcfc";
+var bgcolor = "#7a9afa";
+var bgcolor_ = "#cfcfcf";
+
+var model = new Array();
+var need_clean = new Array();    //used to record whether it's visited or not 0 and 1
+var list = new Array();    //array list to use--
+var sizeX;
+var sizeY;
+
+var mine_img = "<img src='http://ctc.qzonestyle.gtimg.cn/qzone/em/e136.gif' />";
+
+//初始化页面
+window.onload = function(){
+    var inputObj = document.getElementsByTagName("input");
+    for(var i = 0;i < inputObj.length;i++){
+        with(inputObj[i]){
+            onkeyup = function(){
+                this.value=this.value.replace(/\D/g,'');
+            };
+            onafterpaste = function(){
+                this.value=this.value.replace(/\D/g,'');
+            };
+        }
+    }    
+    sizeX = document.getElementById("sx").value;
+    sizeY = document.getElementById("sy").value;
+    for(var y_ = 0;y_ < sizeY;y_++){
+        model[y_] = new Array();
+        need_clean[y_] = new Array();   //--clean: create 2d array
+        for(var x_ = 0;x_ < sizeX;x_++){
+            var t = (boxY + 1) * y_;
+            var l = (boxX + 1) * x_;
+            var id = y_ + "_" + x_;
+            var v = "";
+            var random = parseInt(Math.random() * 10);
+            if(random == 3 || random ==7)
+                v = mine_img;
+            else
+                v = ""; 
+            var b = new box(boxX,boxY,t,l,v,bgcolor,border,id);
+            model[y_][x_] = b;
+            need_clean[y_][x_] = 0;  //--clean: initialize to 0
+            b.draw();
+            addFun(id);
+        }
+    }
+};
+
+
+//初始化格子
+document.getElementById("init").onclick = function() {
+    window.location.reload();
+};
+
+
+//填充 DFS 
+function fill(id) {
+    var y = parseInt(id.substring(0,id.indexOf("_")));
+    var x = parseInt(id.substring(id.indexOf("_") + 1,id.length));
+    var mine = 0;
+    model[y][x].setBgColor(bgcolor_);
+    model[y][x].setValue(id);
+    need_clean[y][x]=1;  //--clean
+}
+
+
+
+
+//格子类
+function box(x,y,top,left,value,bgcolor,border,id){
+    //private 
+    var boxX = x + "px";
+    var boxY = y + "px";
+    var boxTop = top + "px";
+    var boxLeft = left + "px";
+    var bgcolor = bgcolor;
+    var id = id;
+    var border = border;
+    var value = value;
+    //public
+    this.getId = function() {
+        return id;
+    }
+    this.getValue = function() {
+        return value;
+    }
+    this.setValue = function(v){
+        value = v;
+        //
+        bgcolor = bgcolor_;
+        //
+        this.draw(value);
+    }
+    this.setBgColor = function(bg){
+        bgcolor = bg;
+        this.draw();
+    }
+    this.getBgColor = function() {
+        return bgcolor;
+    }
+    this.draw = function(v){
+        var boxObj = document.createElement("div");
+        boxObj.style.position = "absolute";
+        boxObj.style.width = boxX;
+        boxObj.style.height = boxY;
+        boxObj.style.top = boxTop;
+        boxObj.style.left = boxLeft;
+        boxObj.style.border = border;
+        boxObj.style.backgroundColor = bgcolor;
+        boxObj.style.cursor = "pointer";
+        boxObj.style.fontSize = "18px";
+        boxObj.style.fontWeight = "bold";
+        boxObj.style.fontFamily = "微软雅黑";
+        boxObj.style.textAlign = "center";
+        boxObj.style.lineHeight = boxX;
+        boxObj.id = id;
+        if(v != null){
+            boxObj.innerHTML = value;
+        }
+        //boxObj.innerHTML = value;
+        document.getElementById("panel").appendChild(boxObj);        
+    };
+}
+
+//turn the 0,1-2d array to real value list
+function getlist(sizeY,sizeX,arr){
+    var list1 = new Array();
+    var sum=0
+    for(var y_ = 0;y_ < sizeY;y_++){
+        for(var x_ = 0;x_ < sizeX;x_++){
+            if(arr[y_][x_]!=0){                 //meaning  ==1
+                list1[sum]=y_*sizeX+x_;
+                sum=sum+1;
+            }
+        }
+    }
+    return list1;
+
+}
+
+
+//事件绑定
+//eventUtil.addEventHandler = 
+function addFun(id){
+    var oTarget = document.getElementById(id); 
+    //IE和FF的兼容性处理
+    if(oTarget.addEventListener){//如果是FF   
+        oTarget.addEventListener("click",function() {
+            fill(id);
+            //window.alert(need_clean);
+            list=getlist(sizeY,sizeX,need_clean);
+            document.getElementById("output").innerHTML = list;
+        },false);
+    } else if(oTarget.attachEvent){//如果是IE
+        oTarget.attachEvent('onclick',function(){
+            fill(id);
+            //window.alert(need_clean);
+            list=getlist(sizeY,sizeX,need_clean);
+            document.getElementById("output").innerHTML = list;
+        });
+    } else{
+        //oTarget['on'+sEventType] = fnHandler;
+    }
+}
+
+
+</script>
+
+
+
+
+<div style="text-align: center;" id="output" >
+
+</div>
+
+
+</body>
+</html>
